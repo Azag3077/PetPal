@@ -17,11 +17,21 @@ void useTallScreen(WidgetTester tester) {
   addTearDown(tester.view.resetDevicePixelRatio);
 }
 
+/// The app now starts on the "name your pet" screen, so every home-screen
+/// test has to get past it first. This little helper does that: type a name,
+/// press Start, and we are on the home screen.
+Future<void> startWithPet(WidgetTester tester, [String name = 'Bolu']) async {
+  await tester.pumpWidget(const PetPalApp());
+  await tester.enterText(find.byType(TextFormField), name);
+  await tester.tap(find.text('Start'));
+  await tester.pump();
+}
+
 void main() {
   testWidgets('feeding the pet makes the hunger number go down',
       (tester) async {
     useTallScreen(tester);
-    await tester.pumpWidget(const PetPalApp());
+    await startWithPet(tester);
 
     expect(find.text('40'), findsOneWidget);
 
@@ -33,7 +43,7 @@ void main() {
 
   testWidgets('stats never go below 0', (tester) async {
     useTallScreen(tester);
-    await tester.pumpWidget(const PetPalApp());
+    await startWithPet(tester);
 
     for (var i = 0; i < 5; i++) {
       await tester.tap(find.byIcon(Icons.restaurant));
@@ -45,7 +55,7 @@ void main() {
 
   testWidgets('the mood word changes when the pet gets tired', (tester) async {
     useTallScreen(tester);
-    await tester.pumpWidget(const PetPalApp());
+    await startWithPet(tester);
 
     // Energy starts at 80, so the pet is happy.
     expect(find.text('Happy'), findsOneWidget);
@@ -62,7 +72,7 @@ void main() {
 
   testWidgets('the clock makes the pet hungrier all by itself', (tester) async {
     useTallScreen(tester);
-    await tester.pumpWidget(const PetPalApp());
+    await startWithPet(tester);
 
     expect(find.text('40'), findsOneWidget);
 
@@ -75,7 +85,7 @@ void main() {
 
   testWidgets('a very hungry pet gets a warning message', (tester) async {
     useTallScreen(tester);
-    await tester.pumpWidget(const PetPalApp());
+    await startWithPet(tester);
 
     // Hunger starts at 40 and grows by 5 every 3 seconds.
     // After 8 ticks it reaches 80, which counts as starving.
@@ -92,7 +102,7 @@ void main() {
 
   testWidgets('feeding the pet shakes it sideways', (tester) async {
     useTallScreen(tester);
-    await tester.pumpWidget(const PetPalApp());
+    await startWithPet(tester);
 
     // The pet is now painted, so we look for the CustomPaint inside PetView.
     final petBody = find
@@ -116,7 +126,7 @@ void main() {
 
   testWidgets('the pet can be dragged across the play area', (tester) async {
     useTallScreen(tester);
-    await tester.pumpWidget(const PetPalApp());
+    await startWithPet(tester);
 
     final startX = tester.getTopLeft(find.byType(PetView)).dx;
 
@@ -132,7 +142,7 @@ void main() {
 
   testWidgets('the pet cannot be dragged off the grass', (tester) async {
     useTallScreen(tester);
-    await tester.pumpWidget(const PetPalApp());
+    await startWithPet(tester);
 
     // Drag much further left than the play area is wide.
     await tester.drag(find.byType(PetView), const Offset(-2000, 0));
@@ -155,7 +165,7 @@ void main() {
   testWidgets('tapping the pet makes it giggle and get happier',
       (tester) async {
     useTallScreen(tester);
-    await tester.pumpWidget(const PetPalApp());
+    await startWithPet(tester);
 
     // Happiness starts at 70.
     expect(find.text('70'), findsOneWidget);

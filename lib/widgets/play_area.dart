@@ -11,12 +11,16 @@ class PlayArea extends StatefulWidget {
   const PlayArea({
     super.key,
     required this.mood,
+    required this.baseColor,
     required this.shakeCount,
     required this.onPetTapped,
   });
 
   /// Passed straight through to the pet.
   final Mood mood;
+
+  /// The colour the player chose. Passed straight through to the pet.
+  final Color baseColor;
 
   /// Passed straight through to the pet.
   final int shakeCount;
@@ -80,6 +84,7 @@ class _PlayAreaState extends State<PlayArea> {
                   onTap: widget.onPetTapped,
                   child: PetView(
                     mood: widget.mood,
+                    baseColor: widget.baseColor,
                     shakeCount: widget.shakeCount,
                   ),
                 ),

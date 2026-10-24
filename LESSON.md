@@ -1,100 +1,127 @@
-# Lesson 08: Drag Your Pet Around
+# Lesson 09: Name Your Pet
 
 ## The new idea
 
-So far the player can only press buttons. Today they can **touch the pet
-itself** — drag it around a patch of grass, and tap it to make it giggle.
+Every pet so far has been called Bolu, because we typed that into the code.
+Today the **player** decides — and that means letting them type.
 
-### `GestureDetector`
+### `TextEditingController`
 
-Wrap anything in a `GestureDetector` and it starts noticing fingers:
-
-```dart
-GestureDetector(
-  onTap: widget.onPetTapped,
-  onPanUpdate: (details) => _movePet(details.delta, area),
-  child: PetView(...),
-)
-```
-
-- **`onTap`** — a quick touch.
-- **`onPanUpdate`** — fires over and over while a finger slides across the
-  screen.
-
-The important word is **`details.delta`**. It is *not* where the finger is — it
-is the little **step** the finger just took. So we never set the position, we
-always **add** the step to the position we already had. That is why the pet
-follows the finger instead of jumping to it.
-
-### `Stack` and `Positioned`
-
-A `Column` decides where its children go. We do not want that any more — we
-want to say "the pet is exactly 130 pixels from the left and 40 from the top".
-That needs a **`Stack`** (children can overlap and float) and a
-**`Positioned`** (`left:` and `top:`).
-
-`Positioned` **only works inside a `Stack`**. That is a rule worth writing on
-the board.
-
-### `LayoutBuilder` and keeping the pet on the grass
-
-How do we know where the edge of the grass is? **`LayoutBuilder`** tells us how
-much room we were given (`area.maxWidth`, `area.maxHeight`). Then `clamp` keeps
-the pet inside:
+A text field needs somewhere to keep the letters. That somewhere is a
+controller:
 
 ```dart
-(_position.dx + delta.dx).clamp(0, area.maxWidth - _petWidth)
+final _nameController = TextEditingController();
+...
+TextFormField(controller: _nameController)
+...
+final typed = _nameController.text;
 ```
 
-Same `clamp` as the stats in lesson 02 — a tool we already own, used for a
-completely different job.
+And — third time now — **a controller must be disposed**. Timers, animation
+controllers, text controllers: if you created it, you clean it up.
+
+### `Form` and validators
+
+A `Form` is a wrapper that knows about all the fields inside it. We pin a
+`GlobalKey<FormState>` on it as a name tag so we can reach it later:
+
+```dart
+if (_formKey.currentState!.validate()) { ... }
+```
+
+Each field gets a **validator** — a function that looks at what was typed and
+returns:
+
+- an **error message** if something is wrong, or
+- **`null`** if everything is fine.
+
+That `null` trips people up. Remember: *no message means no problem.*
+
+```dart
+String? _checkName(String? value) {
+  if (name.isEmpty) return 'Your pet needs a name!';
+  if (name.length > 12) return 'That is too long — 12 letters at most.';
+  return null;   // all good
+}
+```
+
+We also use `.trim()` to throw away stray spaces, so `"  Bolu  "` becomes
+`"Bolu"` and a name of nothing but spaces counts as empty.
+
+### Handing the answer back
+
+The name screen does not know what a pet is. It just calls the function it was
+given:
+
+```dart
+widget.onReady(_nameController.text.trim(), _chosenColor);
+```
+
+This is the same trick as the Feed button in lesson 02 — **a widget reports
+what happened, and somebody else decides what it means.**
+
+For now `main.dart` holds the answers and swaps screens with a single `if`.
+Next lesson we replace that with Flutter's real `Navigator`.
+
+### Keys
+
+Each colour circle gets `key: ValueKey(color)`. A key is a label that tells
+Flutter (and our tests) which circle is which.
 
 ## Files added or changed
 
-- `lib/widgets/play_area.dart` — **new.** The grass, the `Stack`, the
-  `Positioned` pet, and the drag maths.
-- `lib/models/pet.dart` — new `giggle()` method (a small happiness boost).
-- `lib/screens/home_screen.dart` — shows `PlayArea` instead of `PetView`, and
-  giggles when the pet is tapped.
-- `test/widget_test.dart` — drags the pet, checks it cannot leave the grass,
-  and taps it to check happiness rises.
+- `lib/screens/name_screen.dart` — **new.** The form, the validator and the
+  six colour circles.
+- `lib/main.dart` — new `PetPalRoot` that shows the name screen first, then the
+  home screen.
+- `lib/screens/home_screen.dart` — takes `petName` and `petColor`, and builds
+  its `Pet` in `initState` with `late final`.
+- `lib/widgets/play_area.dart`, `pet_view.dart`, `pet_painter.dart` — pass the
+  chosen colour down; the mood now *tints* that colour with `Color.lerp`.
+- `test/name_screen_test.dart` — **new.** Six tests for the form.
+- `test/widget_test.dart` — a `startWithPet` helper so every home test gets
+  past the name screen first.
 
 ## Build it live (teacher script)
 
-1. Add `giggle()` to `Pet`: `happiness + 5`, `energy - 1`. Small on purpose, so
-   tapping is not a cheat code.
-2. Create `play_area.dart` with just the green `Container` (height 300,
-   rounded, bordered) and `PetView` inside it. Hot reload — the pet is standing
-   on grass.
-3. Swap the plain child for a `Stack` with a `Positioned`. Hard-code
-   `left: 30, top: 24` and show that changing those numbers moves the pet.
-   Delete the `Stack` for a second so students see the error that `Positioned`
-   must live in a `Stack`.
-4. Turn `left`/`top` into a state field: `Offset _position = Offset(30, 24);`
-5. Wrap the pet in a `GestureDetector` with only `onPanUpdate` and write
-   `_movePet` **without** the clamp:
-   `_position = _position + delta;`
-   Drag the pet right off the screen. Everyone will try it. This is the fun
-   part.
-6. Add `LayoutBuilder` and the `clamp`. Now the pet stops at the fence.
-7. Add `onTap: widget.onPetTapped` and wire it up in `home_screen.dart` with
-   `setState(() => pet.giggle())`. Tap the pet and watch the happiness bar.
-8. Ask: why does `PlayArea` not know what a giggle is? (Same reason the buttons
-   do not — the screen owns the pet, the widgets just report touches.)
-9. Run `flutter analyze` and `flutter test`.
+1. Create `name_screen.dart`. Start with just a `Scaffold`, a heading and a
+   plain `TextFormField` with a controller. Type into it. Nothing happens yet —
+   that is fine.
+2. Add `dispose()` with `_nameController.dispose()`. Ask the class what else we
+   have had to dispose so far (timers, animation controllers).
+3. Add the `FilledButton` and make `_submit()` just `print` the text. Show the
+   typed name in the console.
+4. Wrap everything in a `Form` with `key: _formKey` and add the `validator`.
+   Press Start empty — the red message appears all by itself. This always gets
+   a reaction.
+5. Try a very long name. Then explain the `null` return: no message means no
+   problem.
+6. Add `.trim()` and test with `"   Bolu   "`.
+7. Add the colour circles with a `for` inside the `Wrap`, and
+   `onTap: () => setState(() => _chosenColor = color)`. Tap them and watch the
+   tick move.
+8. Change `onReady` from a print to a real callback. In `main.dart`, write
+   `PetPalRoot` with `_petName`, `_petColor` and the `if`.
+9. Give `HomeScreen` its two new parameters. Fix the red lines: `Pet` is now
+   built in `initState` with `late final Pet pet;`. Explain `late` as "I
+   promise to fill this in before anyone looks".
+10. Pass the colour down to `PetView` and use `Color.lerp` for the moods.
+    Restart, pick pink, let the pet get sad, and watch the pink go grey.
+11. Run `flutter analyze` and `flutter test`.
 
 ## Quick check
 
-1. What is the difference between where a finger *is* and `details.delta`?
-2. Which widget must a `Positioned` be inside?
-3. We used `clamp` in lesson 02 for hunger and again today for position. What
-   does `clamp` do in both cases?
+1. What does a validator return when the value is **good**?
+2. Why must we call `_nameController.dispose()`?
+3. The name screen does not know what a `Pet` is. How does the name get to the
+   home screen then?
 
 ## Homework
 
-**Easy:** make the grass taller (height 400) and start the pet in a different
-corner. Then add `onDoubleTap` so a double tap feeds the pet.
+**Easy:** change the rules so a name must be at least 2 letters long, with your
+own error message. Then add two more colours to `petColors`.
 
-**Bonus (older students):** add `onPanEnd` so that when the player lets go, the
-pet slides gently back to the middle of the grass. Hint: you will need an
-`AnimationController` and a `Tween<Offset>`, or `AnimatedPositioned`.
+**Bonus (older students):** add a second field where the player types the pet's
+age in years, and validate that it is a whole number between 0 and 20. Hint:
+`int.tryParse(value)` returns `null` when the text is not a number.

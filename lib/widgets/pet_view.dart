@@ -11,10 +11,19 @@ import 'pet_painter.dart';
 /// [PetPainter]. This widget's job is to pick the colour, run the
 /// animations, and hand the painter a canvas to draw on.
 class PetView extends StatefulWidget {
-  const PetView({super.key, required this.mood, this.shakeCount = 0});
+  const PetView({
+    super.key,
+    required this.mood,
+    this.baseColor = const Color(0xFFFFCC80),
+    this.shakeCount = 0,
+  });
 
   /// How the pet is feeling right now.
   final Mood mood;
+
+  /// The colour the player chose on the name screen. The mood then tints it:
+  /// bright when happy, washed out when sad.
+  final Color baseColor;
 
   /// A counter that goes up by one every time the pet is fed.
   /// We do not care about the number — we only care that it *changed*,
@@ -87,18 +96,20 @@ class _PetViewState extends State<PetView> with TickerProviderStateMixin {
     }
   }
 
-  /// Picks the body colour for each mood.
+  /// Picks the body colour: the player's colour, tinted by the mood.
+  ///
+  /// `Color.lerp(a, b, 0.4)` means "mix a and b, 40% of the way towards b".
   /// A `switch` on an enum is neat: the compiler checks we covered every mood.
   Color get _bodyColor {
     switch (widget.mood) {
       case Mood.happy:
-        return Colors.orange.shade200;
+        return widget.baseColor;
       case Mood.okay:
-        return Colors.amber.shade100;
+        return Color.lerp(widget.baseColor, Colors.white, 0.3)!;
       case Mood.sad:
-        return Colors.blueGrey.shade200;
+        return Color.lerp(widget.baseColor, Colors.blueGrey, 0.5)!;
       case Mood.sleepy:
-        return Colors.indigo.shade100;
+        return Color.lerp(widget.baseColor, Colors.indigo.shade200, 0.4)!;
     }
   }
 

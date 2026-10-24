@@ -8,8 +8,21 @@ import '../widgets/stat_bar.dart';
 
 /// The main screen of the app.
 /// It owns one Pet object and draws whatever that pet's numbers say.
+///
+/// The name and colour are not decided here any more — they arrive from the
+/// NameScreen, through the constructor.
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    required this.petName,
+    required this.petColor,
+  });
+
+  /// The name the player typed in.
+  final String petName;
+
+  /// The colour the player picked.
+  final Color petColor;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -18,7 +31,10 @@ class HomeScreen extends StatefulWidget {
 /// As well as showing the pet, this screen now keeps a clock running so time
 /// passes even when the player does nothing.
 class _HomeScreenState extends State<HomeScreen> {
-  final Pet pet = Pet(name: 'Bolu');
+  /// `late` means "I promise to fill this in before anyone reads it".
+  /// We cannot build the pet on this line because we need `widget.petName`,
+  /// and `widget` is only ready once `initState` runs.
+  late final Pet pet;
 
   /// Our repeating clock. It may be null before the screen is ready,
   /// which is why the type has a `?` on the end.
@@ -36,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    pet = Pet(name: widget.petName);
     _clock = Timer.periodic(const Duration(seconds: 3), (timer) {
       setState(() => pet.tick());
       _warnIfStarving();
@@ -84,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // The pet now lives on a patch of grass it can be dragged around.
             PlayArea(
               mood: pet.mood,
+              baseColor: widget.petColor,
               shakeCount: _shakeCount,
               onPetTapped: () => setState(() => pet.giggle()),
             ),

@@ -29,8 +29,10 @@ class PetPainter extends CustomPainter {
       ..color = bodyColor
       ..style = PaintingStyle.fill;
 
+    // The outline is just the body colour mixed 40% of the way to black, so
+    // it always matches whatever colour the player chose.
     final outline = Paint()
-      ..color = Colors.orange.shade700
+      ..color = Color.lerp(bodyColor, Colors.black, 0.4)!
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4;
 
