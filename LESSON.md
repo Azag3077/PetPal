@@ -1,79 +1,83 @@
-# Lesson 03: A Pet Class of Our Own
+# Lesson 04: How Is My Pet Feeling?
 
 ## The new idea
 
-Right now the rules of our game ("feeding takes 25 off hunger") are mixed into
-the screen code. That works, but it is untidy, and it means we cannot test the
-rules without building a whole screen.
+Our pet has three numbers, but a child looking at the screen wants one simple
+answer: **is my pet happy or not?**
 
-So we make a **class**: `Pet`.
-
-A class is a **blueprint**. It says what a thing *has* (fields) and what a
-thing can *do* (methods):
+So we add a `mood`. A mood is not a number and it is not free text — it is one
+of exactly four choices. That is what an **enum** is for:
 
 ```dart
-class Pet {
-  int hunger;          // something it HAS
-  void feed() { ... }  // something it can DO
+enum Mood { happy, okay, sad, sleepy }
+```
+
+Why an enum instead of a `String`? Because `'happpy'` with three p's compiles
+fine and then quietly breaks your app. `Mood.happpy` does not compile at all.
+The computer catches the typo for you.
+
+We work the mood out with a **getter**:
+
+```dart
+Mood get mood {
+  if (energy < 25) return Mood.sleepy;
+  ...
 }
 ```
 
-From one blueprint we can build as many pets as we like:
-`Pet(name: 'Bolu')`, `Pet(name: 'Zara')`.
+A getter is a method that pretends to be a field. You write `pet.mood`, not
+`pet.mood()`. We never *store* the mood, we always *work it out* from the
+current numbers — so it can never get out of date.
 
-This is called **separating logic from UI**:
+Then in the UI we **choose a widget with a `switch`**: one colour per mood, one
+mouth shape per mood, eyes open or closed.
 
-- `pet.dart` knows the *rules* — and nothing about buttons or colours.
-  It does not even `import` Flutter!
-- `home_screen.dart` knows how things *look* — and asks the pet to do the work.
-
-The big win: because `Pet` has no widgets in it, we can test it with a plain
-`test()` instead of a `testWidgets()`. These tests run instantly.
+Watch out for the **order of the `if`s**. We check energy first, so a very
+tired pet is sleepy even if it is also happy. Change the order and the app
+behaves differently — that is a great thing to try live.
 
 ## Files added or changed
 
-- `lib/models/pet.dart` — **new.** The `Pet` class with `name`, `hunger`,
-  `happiness`, `energy` and the methods `feed()`, `play()`, `sleep()`.
-- `lib/screens/home_screen.dart` — holds one `Pet` and reads `pet.hunger`
-  instead of its own variables.
-- `test/pet_test.dart` — **new.** Five unit tests for the rules.
-- `test/widget_test.dart` — still checks the screen works.
+- `lib/models/pet.dart` — adds the `Mood` enum and the `mood` getter.
+- `lib/widgets/pet_view.dart` — takes a `mood`, and changes colour, eyes and
+  mouth to match. Shows the mood word under the pet.
+- `lib/screens/home_screen.dart` — passes `pet.mood` down to `PetView`.
+- `test/pet_test.dart` — four new tests, one per mood.
+- `test/widget_test.dart` — plays until the pet is tired and checks the word
+  changes to "Sleepy".
 
 ## Build it live (teacher script)
 
-1. Make the folder `lib/models/`. Explain the word "model": the part of the app
-   that holds the real information, like the pet itself.
-2. Create `pet.dart`. Point at the top of the file: **no import**. Say "this
-   file does not know Flutter exists."
-3. Write the fields, then the constructor with named parameters and defaults:
-   `Pet({required this.name, this.hunger = 40, ...})`.
-4. Move `feed()`, `play()` and `sleep()` from the screen into the class. Cut
-   and paste — the bodies do not change, we just drop `setState`.
-5. Move `clamp` in as well and make it `static` (it belongs to all pets, not to
-   one particular pet).
-6. In the screen, delete the three `int` variables and write
-   `final Pet pet = Pet(name: 'Bolu');`
-7. Fix every red line: `hunger` becomes `pet.hunger`, and the buttons become
-   `onPressed: () => setState(() => pet.feed())`.
-   Ask: why do we still need `setState`? (The pet changed, but only the screen
-   can redraw itself.)
-8. Create `test/pet_test.dart` and write the first test together. Run
-   `flutter test` and watch how fast it is compared to a widget test.
-9. Run `flutter analyze` and `flutter test`.
+1. At the top of `pet.dart`, write `enum Mood { happy, okay, sad, sleepy }`.
+   Note it goes *outside* the class — a mood is not owned by one pet.
+2. Add the `mood` getter with the four `if`s. Read them out loud like English:
+   "if energy is under 25 the pet is sleepy".
+3. In `pet_view.dart`, add `required this.mood` to the constructor. Everything
+   goes red because `home_screen` is not passing it yet — fix that next:
+   `PetView(mood: pet.mood)`.
+4. Add the `_bodyColor` getter with a `switch`. Delete one of the four `case`s
+   on purpose: the compiler complains that the switch is not exhaustive. Put it
+   back. Explain that this safety net is the whole point of an enum.
+5. Give `_Eye` a `closed` parameter and use `closed ? 5 : 26` for the height.
+   Hot reload and tap Play until the pet falls asleep.
+6. Change `_Mouth` so the width comes from a `switch` expression and a happy
+   mouth gets a rounded bottom.
+7. Swap the order of the `if`s in `mood` and show how the behaviour changes.
+   Put it back.
+8. Run `flutter analyze` and `flutter test`.
 
 ## Quick check
 
-1. What is the difference between a *field* and a *method*?
-2. `pet.dart` has no `import 'package:flutter/material.dart';`. Why is that a
-   good thing?
-3. We moved `feed()` into the `Pet` class but kept `setState` in the screen.
-   Why can't `setState` live inside `Pet`?
+1. Why is `Mood.happy` safer than the text `'happy'`?
+2. What is the difference between `pet.mood` and `pet.mood()`?
+3. Our pet has 100 happiness but only 10 energy. What mood is it, and which
+   line of code decides that?
 
 ## Homework
 
-**Easy:** add a method `bath()` to `Pet` that raises happiness by 15, and write
-a unit test for it. Then wire up a Bath button.
+**Easy:** add a fifth mood called `excited` for when happiness is 100, and give
+it a bright pink body colour.
 
-**Bonus (older students):** add an `int age = 0` field and a `birthday()`
-method that adds one year and resets happiness to 100. Add a test that a pet
-cannot have a negative age.
+**Bonus (older students):** add eyebrows that slant downwards when the pet is
+sad. Hint: wrap a thin `Container` in a `Transform.rotate` and give it an angle
+that depends on the mood.

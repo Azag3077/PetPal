@@ -1,3 +1,8 @@
+/// The four feelings our pet can have.
+/// An enum is just a short list of named choices — you cannot misspell one,
+/// which is why it is safer than using the words 'happy', 'sad' as text.
+enum Mood { happy, okay, sad, sleepy }
+
 /// Our pet, as a plain Dart class — no widgets, no Flutter, just rules.
 ///
 /// The screen asks the pet to do things (`feed()`, `play()`, `sleep()`) and
@@ -25,6 +30,19 @@ class Pet {
 
   /// Keeps a number inside 0 and 100 so stats never go silly.
   static int clamp(int value) => value.clamp(0, 100);
+
+  /// Works out how the pet is feeling from its three numbers.
+  /// This is a *getter*: it looks like a field when you use it
+  /// (`pet.mood`) but it does a little thinking first.
+  ///
+  /// The order of the checks matters! A very tired pet is sleepy even if it
+  /// is also happy, because we check energy first.
+  Mood get mood {
+    if (energy < 25) return Mood.sleepy;
+    if (hunger > 70 || happiness < 30) return Mood.sad;
+    if (happiness >= 70) return Mood.happy;
+    return Mood.okay;
+  }
 
   /// Feeding fills the tummy and cheers the pet up a little.
   void feed() {

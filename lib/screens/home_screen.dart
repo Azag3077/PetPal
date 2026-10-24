@@ -31,7 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            const PetView(),
+            // We hand the pet's mood to PetView so it can draw the right face.
+            PetView(mood: pet.mood),
             const SizedBox(height: 16),
             Text(
               pet.name,

@@ -54,4 +54,30 @@ void main() {
       expect(pet.energy, 0, reason: 'energy should stop at 0');
     });
   });
+
+  group('Pet mood', () {
+    test('a lively, well fed, cheerful pet is happy', () {
+      final pet = Pet(name: 'Bolu', hunger: 20, happiness: 80, energy: 90);
+
+      expect(pet.mood, Mood.happy);
+    });
+
+    test('a so-so pet is okay', () {
+      final pet = Pet(name: 'Bolu', hunger: 40, happiness: 50, energy: 90);
+
+      expect(pet.mood, Mood.okay);
+    });
+
+    test('a starving pet is sad', () {
+      final pet = Pet(name: 'Bolu', hunger: 90, happiness: 100, energy: 90);
+
+      expect(pet.mood, Mood.sad);
+    });
+
+    test('a worn out pet is sleepy, even when it is happy', () {
+      final pet = Pet(name: 'Bolu', hunger: 10, happiness: 100, energy: 10);
+
+      expect(pet.mood, Mood.sleepy);
+    });
+  });
 }
