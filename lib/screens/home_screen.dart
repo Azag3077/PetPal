@@ -27,6 +27,10 @@ class _HomeScreenState extends State<HomeScreen> {
   /// So we only nag the player once per hungry spell, not every three seconds.
   bool _hasWarned = false;
 
+  /// Goes up by one every time we feed the pet. PetView watches this number
+  /// and shakes the pet whenever it changes.
+  int _shakeCount = 0;
+
   /// `initState` runs ONCE, right when the screen is created.
   /// It is the place to start things like timers.
   @override
@@ -77,8 +81,9 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            // We hand the pet's mood to PetView so it can draw the right face.
-            PetView(mood: pet.mood),
+            // We hand the pet's mood to PetView so it can draw the right face,
+            // and the shake counter so it knows when to wobble.
+            PetView(mood: pet.mood, shakeCount: _shakeCount),
             const SizedBox(height: 16),
             Text(
               pet.name,
@@ -104,7 +109,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   label: 'Feed',
                   icon: Icons.restaurant,
                   // Ask the pet to eat, then redraw the screen.
-                  onPressed: () => setState(() => pet.feed()),
+                  onPressed: () => setState(() {
+                    pet.feed();
+                    _shakeCount++;
+                  }),
                 ),
                 _ActionButton(
                   label: 'Play',

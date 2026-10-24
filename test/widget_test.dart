@@ -88,6 +88,30 @@ void main() {
         findsOneWidget);
   });
 
+  testWidgets('feeding the pet shakes it sideways', (tester) async {
+    useTallScreen(tester);
+    await tester.pumpWidget(const PetPalApp());
+
+    // The pet's round body is the first AnimatedContainer inside PetView.
+    final petBody = find
+        .descendant(
+          of: find.byType(PetView),
+          matching: find.byType(AnimatedContainer),
+        )
+        .first;
+
+    final startX = tester.getCenter(petBody).dx;
+
+    await tester.tap(find.byIcon(Icons.restaurant));
+
+    // Jump a little way into the 400ms shake and check the pet has slid
+    // off to one side.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+
+    expect(tester.getCenter(petBody).dx, isNot(startX));
+  });
+
   testWidgets('PetView can be drawn on its own for any mood', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
