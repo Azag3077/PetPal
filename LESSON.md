@@ -1,83 +1,87 @@
-# Lesson 04: How Is My Pet Feeling?
+# Lesson 05: Time Keeps Ticking
 
 ## The new idea
 
-Our pet has three numbers, but a child looking at the screen wants one simple
-answer: **is my pet happy or not?**
+A real pet gets hungry whether you are looking at it or not. So our app needs
+a **clock**.
 
-So we add a `mood`. A mood is not a number and it is not free text — it is one
-of exactly four choices. That is what an **enum** is for:
+Flutter gives every `StatefulWidget` two special moments, called **lifecycle
+methods**:
+
+- **`initState()`** — runs **once**, the moment the screen is born.
+  Start things here.
+- **`dispose()`** — runs **once**, the moment the screen is thrown away.
+  Stop things here.
+
+And the tool we start is a **`Timer.periodic`**:
 
 ```dart
-enum Mood { happy, okay, sad, sleepy }
+_clock = Timer.periodic(const Duration(seconds: 3), (timer) {
+  setState(() => pet.tick());
+});
 ```
 
-Why an enum instead of a `String`? Because `'happpy'` with three p's compiles
-fine and then quietly breaks your app. `Mood.happpy` does not compile at all.
-The computer catches the typo for you.
-
-We work the mood out with a **getter**:
+That means "every 3 seconds, run this code". It keeps going for ever — which is
+exactly why we must cancel it:
 
 ```dart
-Mood get mood {
-  if (energy < 25) return Mood.sleepy;
-  ...
+@override
+void dispose() {
+  _clock?.cancel();
+  super.dispose();
 }
 ```
 
-A getter is a method that pretends to be a field. You write `pet.mood`, not
-`pet.mood()`. We never *store* the mood, we always *work it out* from the
-current numbers — so it can never get out of date.
+**A timer you forget to cancel is like a tap left running.** The screen is
+gone, but the timer keeps firing and keeps calling `setState` on a screen that
+no longer exists. Flutter will shout at you in red.
 
-Then in the UI we **choose a widget with a `switch`**: one colour per mood, one
-mouth shape per mood, eyes open or closed.
+We also meet a **`SnackBar`** — the little message that slides up from the
+bottom — to warn the player when the pet is starving.
 
-Watch out for the **order of the `if`s**. We check energy first, so a very
-tired pet is sleepy even if it is also happy. Change the order and the app
-behaves differently — that is a great thing to try live.
+Notice the `?` in `Timer? _clock;`. It means "this might be nothing yet", and
+`_clock?.cancel()` means "cancel it, but only if it exists".
 
 ## Files added or changed
 
-- `lib/models/pet.dart` — adds the `Mood` enum and the `mood` getter.
-- `lib/widgets/pet_view.dart` — takes a `mood`, and changes colour, eyes and
-  mouth to match. Shows the mood word under the pet.
-- `lib/screens/home_screen.dart` — passes `pet.mood` down to `PetView`.
-- `test/pet_test.dart` — four new tests, one per mood.
-- `test/widget_test.dart` — plays until the pet is tired and checks the word
-  changes to "Sleepy".
+- `lib/models/pet.dart` — new `tick()` method (time passing) and an
+  `isStarving` getter.
+- `lib/screens/home_screen.dart` — `initState` starts the clock, `dispose`
+  cancels it, and `_warnIfStarving` shows the `SnackBar`.
+- `test/pet_test.dart` — tests for `tick()` and `isStarving`.
+- `test/widget_test.dart` — jumps forward in time and checks hunger grows and
+  the warning appears.
 
 ## Build it live (teacher script)
 
-1. At the top of `pet.dart`, write `enum Mood { happy, okay, sad, sleepy }`.
-   Note it goes *outside* the class — a mood is not owned by one pet.
-2. Add the `mood` getter with the four `if`s. Read them out loud like English:
-   "if energy is under 25 the pet is sleepy".
-3. In `pet_view.dart`, add `required this.mood` to the constructor. Everything
-   goes red because `home_screen` is not passing it yet — fix that next:
-   `PetView(mood: pet.mood)`.
-4. Add the `_bodyColor` getter with a `switch`. Delete one of the four `case`s
-   on purpose: the compiler complains that the switch is not exhaustive. Put it
-   back. Explain that this safety net is the whole point of an enum.
-5. Give `_Eye` a `closed` parameter and use `closed ? 5 : 26` for the height.
-   Hot reload and tap Play until the pet falls asleep.
-6. Change `_Mouth` so the width comes from a `switch` expression and a happy
-   mouth gets a rounded bottom.
-7. Swap the order of the `if`s in `mood` and show how the behaviour changes.
-   Put it back.
-8. Run `flutter analyze` and `flutter test`.
+1. Add `tick()` to `Pet`. Keep the numbers small (5, 2, 2) so the game is not
+   brutal. Add `isStarving` as a getter too.
+2. In `home_screen.dart`, add `import 'dart:async';` at the very top. Point out
+   it is `dart:async`, not a Flutter import — timers are plain Dart.
+3. Declare `Timer? _clock;`.
+4. Write `initState` and start the periodic timer. Hot **restart** (not
+   reload — `initState` already ran!) and watch the bars creep.
+5. Now the important bit. **Do not** write `dispose` yet. Press the back button
+   or hot restart a few times and show the red error in the console about
+   `setState() called after dispose()`. Let it sink in.
+6. Add `dispose` with `_clock?.cancel()`. The error goes away.
+7. Add `_warnIfStarving()` with the `SnackBar`. Explain `_hasWarned`: without
+   it the message pops up every three seconds and nobody can use the app.
+8. In the test, show `await tester.pump(const Duration(seconds: 3))` — in a
+   test you can *jump* through time instead of waiting. Students love this.
+9. Run `flutter analyze` and `flutter test`.
 
 ## Quick check
 
-1. Why is `Mood.happy` safer than the text `'happy'`?
-2. What is the difference between `pet.mood` and `pet.mood()`?
-3. Our pet has 100 happiness but only 10 energy. What mood is it, and which
-   line of code decides that?
+1. How many times does `initState()` run for one screen?
+2. What goes wrong if you start a `Timer.periodic` and never cancel it?
+3. What does the `?` in `Timer? _clock;` mean?
 
 ## Homework
 
-**Easy:** add a fifth mood called `excited` for when happiness is 100, and give
-it a bright pink body colour.
+**Easy:** make time pass faster by changing `Duration(seconds: 3)` to
+`Duration(seconds: 1)`. Then make `tick()` kinder, so hunger only grows by 2.
 
-**Bonus (older students):** add eyebrows that slant downwards when the pet is
-sad. Hint: wrap a thin `Container` in a `Transform.rotate` and give it an angle
-that depends on the mood.
+**Bonus (older students):** add a Pause button in the `AppBar` that cancels the
+clock, and turns into a Play button that starts it again. Hint: keep a
+`bool _paused` and use `_clock?.cancel()` / start a fresh timer.

@@ -62,4 +62,15 @@ class Pet {
     energy = clamp(energy + 30);
     hunger = clamp(hunger + 10);
   }
+
+  /// One "tick" of time passing. Living costs the pet a little of everything:
+  /// it gets hungrier, slightly less cheerful, and slightly more tired.
+  void tick() {
+    hunger = clamp(hunger + 5);
+    happiness = clamp(happiness - 2);
+    energy = clamp(energy - 2);
+  }
+
+  /// True when the pet is so hungry that we should warn the player.
+  bool get isStarving => hunger >= 80;
 }

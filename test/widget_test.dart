@@ -58,6 +58,36 @@ void main() {
     expect(find.text('Sleepy'), findsOneWidget);
   });
 
+  testWidgets('the clock makes the pet hungrier all by itself', (tester) async {
+    useTallScreen(tester);
+    await tester.pumpWidget(const PetPalApp());
+
+    expect(find.text('40'), findsOneWidget);
+
+    // In a test we can jump forward in time instead of really waiting.
+    await tester.pump(const Duration(seconds: 3));
+
+    // One tick adds 5 to hunger.
+    expect(find.text('45'), findsOneWidget);
+  });
+
+  testWidgets('a very hungry pet gets a warning message', (tester) async {
+    useTallScreen(tester);
+    await tester.pumpWidget(const PetPalApp());
+
+    // Hunger starts at 40 and grows by 5 every 3 seconds.
+    // After 8 ticks it reaches 80, which counts as starving.
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(seconds: 3));
+    }
+
+    // Give the message one frame to slide in.
+    await tester.pump();
+
+    expect(find.text('Bolu is starving! Please feed your pet.'),
+        findsOneWidget);
+  });
+
   testWidgets('PetView can be drawn on its own for any mood', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

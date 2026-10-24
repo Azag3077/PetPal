@@ -55,6 +55,26 @@ void main() {
     });
   });
 
+  group('Pet tick', () {
+    test('time passing makes the pet hungrier, sadder and more tired', () {
+      final pet = Pet(name: 'Bolu', hunger: 40, happiness: 70, energy: 80);
+
+      pet.tick();
+
+      expect(pet.hunger, 45);
+      expect(pet.happiness, 68);
+      expect(pet.energy, 78);
+    });
+
+    test('a pet is starving once hunger reaches 80', () {
+      final pet = Pet(name: 'Bolu', hunger: 79);
+      expect(pet.isStarving, isFalse);
+
+      pet.tick();
+      expect(pet.isStarving, isTrue);
+    });
+  });
+
   group('Pet mood', () {
     test('a lively, well fed, cheerful pet is happy', () {
       final pet = Pet(name: 'Bolu', hunger: 20, happiness: 80, energy: 90);

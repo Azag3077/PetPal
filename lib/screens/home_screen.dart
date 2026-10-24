@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/pet.dart';
@@ -13,12 +15,56 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-/// The screen's job is now only two things:
-/// 1. show the pet's numbers, and
-/// 2. tell the pet when a button was tapped.
-/// All the rules about how much hunger changes live inside the Pet class.
+/// As well as showing the pet, this screen now keeps a clock running so time
+/// passes even when the player does nothing.
 class _HomeScreenState extends State<HomeScreen> {
   final Pet pet = Pet(name: 'Bolu');
+
+  /// Our repeating clock. It may be null before the screen is ready,
+  /// which is why the type has a `?` on the end.
+  Timer? _clock;
+
+  /// So we only nag the player once per hungry spell, not every three seconds.
+  bool _hasWarned = false;
+
+  /// `initState` runs ONCE, right when the screen is created.
+  /// It is the place to start things like timers.
+  @override
+  void initState() {
+    super.initState();
+    _clock = Timer.periodic(const Duration(seconds: 3), (timer) {
+      setState(() => pet.tick());
+      _warnIfStarving();
+    });
+  }
+
+  /// `dispose` runs ONCE, right when the screen is thrown away.
+  /// Anything we started in `initState` must be stopped here, or it keeps
+  /// running forever in the background. A timer that is never cancelled is
+  /// like leaving a tap running.
+  @override
+  void dispose() {
+    _clock?.cancel();
+    super.dispose();
+  }
+
+  /// Shows a message at the bottom of the screen when the pet gets too hungry.
+  void _warnIfStarving() {
+    if (pet.isStarving && !_hasWarned) {
+      _hasWarned = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${pet.name} is starving! Please feed your pet.'),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
+
+    // Once the pet has been fed we are allowed to warn again later.
+    if (!pet.isStarving) {
+      _hasWarned = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
