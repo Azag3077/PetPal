@@ -1,81 +1,79 @@
-# Lesson 02: Hunger, Happiness, Energy
+# Lesson 03: A Pet Class of Our Own
 
 ## The new idea
 
-Until now our screen was frozen. Today it comes alive.
+Right now the rules of our game ("feeding takes 25 off hunger") are mixed into
+the screen code. That works, but it is untidy, and it means we cannot test the
+rules without building a whole screen.
 
-A **`StatelessWidget`** can never change. Once it is drawn, that is it.
-A **`StatefulWidget`** is allowed to remember numbers and change them later.
+So we make a **class**: `Pet`.
 
-A stateful widget comes in two pieces:
-
-1. the widget itself (`HomeScreen`) — small and boring, it just says
-   `createState()`;
-2. the **state** class (`_HomeScreenState`) — this is where the numbers live
-   and where the real code goes.
-
-And the magic word is **`setState`**:
+A class is a **blueprint**. It says what a thing *has* (fields) and what a
+thing can *do* (methods):
 
 ```dart
-setState(() {
-  hunger = hunger - 25;
-});
+class Pet {
+  int hunger;          // something it HAS
+  void feed() { ... }  // something it can DO
+}
 ```
 
-`setState` means: "I changed something — please draw the screen again."
-If you change a number *without* `setState`, the number really does change but
-the screen never notices. That bug catches everyone once!
+From one blueprint we can build as many pets as we like:
+`Pet(name: 'Bolu')`, `Pet(name: 'Zara')`.
 
-One more trick: `clamp(0, 100)`. It squeezes a number so it can never be
-smaller than 0 or bigger than 100. Without it, hunger could become -85 and the
-bar would break.
+This is called **separating logic from UI**:
+
+- `pet.dart` knows the *rules* — and nothing about buttons or colours.
+  It does not even `import` Flutter!
+- `home_screen.dart` knows how things *look* — and asks the pet to do the work.
+
+The big win: because `Pet` has no widgets in it, we can test it with a plain
+`test()` instead of a `testWidgets()`. These tests run instantly.
 
 ## Files added or changed
 
-- `lib/widgets/stat_bar.dart` — **new.** A label, a `LinearProgressIndicator`
-  and the number.
-- `lib/screens/home_screen.dart` — now a `StatefulWidget` with `hunger`,
-  `happiness` and `energy`, and three functions that change them.
-- `test/widget_test.dart` — taps Feed and checks the number went down, and
-  checks stats stop at 0.
+- `lib/models/pet.dart` — **new.** The `Pet` class with `name`, `hunger`,
+  `happiness`, `energy` and the methods `feed()`, `play()`, `sleep()`.
+- `lib/screens/home_screen.dart` — holds one `Pet` and reads `pet.hunger`
+  instead of its own variables.
+- `test/pet_test.dart` — **new.** Five unit tests for the rules.
+- `test/widget_test.dart` — still checks the screen works.
 
 ## Build it live (teacher script)
 
-1. In `home_screen.dart`, change `extends StatelessWidget` to
-   `extends StatefulWidget`. The editor shows a red line — use the quick fix
-   ("Create missing override") or type the two classes by hand.
-2. Add the three numbers at the top of `_HomeScreenState`:
-   `int hunger = 40; int happiness = 70; int energy = 80;`
-3. Build `stat_bar.dart`. Explain the division: the bar wants `0.0` to `1.0`
-   but humans like `0` to `100`, so `value / 100`.
-4. Put the three `StatBar` widgets in the `Column`. Hot reload — three bars!
-5. Write `feed()` **without** `setState` first. Tap the button: nothing
-   happens. Let students puzzle over it. Then wrap it in `setState` and tap
-   again. This is the moment of the lesson.
-6. Add `play()` and `sleep()`. Decide together what each one should do.
-6b. On a small phone you will now see the black-and-yellow "overflow" stripes:
-   the content got taller than the screen. Swap the `Padding` around the
-   `Column` for a `SingleChildScrollView` and the stripes disappear. Say it
-   plainly: **if it does not fit, let it scroll.**
-7. Tap Feed many times until hunger would go negative — show the broken bar,
-   then add `_clamp` and fix it.
-8. Give `_ActionButton` an `onPressed` parameter and pass `feed`, `play`,
-   `sleep` in. Note we write `feed` with **no brackets** — we are handing over
-   the function, not calling it.
+1. Make the folder `lib/models/`. Explain the word "model": the part of the app
+   that holds the real information, like the pet itself.
+2. Create `pet.dart`. Point at the top of the file: **no import**. Say "this
+   file does not know Flutter exists."
+3. Write the fields, then the constructor with named parameters and defaults:
+   `Pet({required this.name, this.hunger = 40, ...})`.
+4. Move `feed()`, `play()` and `sleep()` from the screen into the class. Cut
+   and paste — the bodies do not change, we just drop `setState`.
+5. Move `clamp` in as well and make it `static` (it belongs to all pets, not to
+   one particular pet).
+6. In the screen, delete the three `int` variables and write
+   `final Pet pet = Pet(name: 'Bolu');`
+7. Fix every red line: `hunger` becomes `pet.hunger`, and the buttons become
+   `onPressed: () => setState(() => pet.feed())`.
+   Ask: why do we still need `setState`? (The pet changed, but only the screen
+   can redraw itself.)
+8. Create `test/pet_test.dart` and write the first test together. Run
+   `flutter test` and watch how fast it is compared to a widget test.
 9. Run `flutter analyze` and `flutter test`.
 
 ## Quick check
 
-1. What is the one big difference between a `StatelessWidget` and a
-   `StatefulWidget`?
-2. What goes wrong if you change a number but forget `setState`?
-3. Why do we pass `feed` and not `feed()` to the button?
+1. What is the difference between a *field* and a *method*?
+2. `pet.dart` has no `import 'package:flutter/material.dart';`. Why is that a
+   good thing?
+3. We moved `feed()` into the `Pet` class but kept `setState` in the screen.
+   Why can't `setState` live inside `Pet`?
 
 ## Homework
 
-**Easy:** add a "Bath" button that raises happiness by 10. Then change the
-starting numbers so your pet begins sad and starving.
+**Easy:** add a method `bath()` to `Pet` that raises happiness by 15, and write
+a unit test for it. Then wire up a Bath button.
 
-**Bonus (older students):** make the Hunger bar turn red when hunger is over
-70 and stay green below that. Hint: you can choose a colour with an `if` before
-the `return`, or with `hunger > 70 ? Colors.red : Colors.green`.
+**Bonus (older students):** add an `int age = 0` field and a `birthday()`
+method that adds one year and resets happiness to 100. Add a test that a pet
+cannot have a negative age.
