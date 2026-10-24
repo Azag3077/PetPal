@@ -1,65 +1,81 @@
-# Lesson 01: Drawing Our Pet
+# Lesson 02: Hunger, Happiness, Energy
 
 ## The new idea
 
-Flutter apps are built by **putting small widgets inside bigger widgets**. We
-never draw a whole screen in one go — we build little pieces and stack them.
+Until now our screen was frozen. Today it comes alive.
 
-The three pieces we use today:
+A **`StatelessWidget`** can never change. Once it is drawn, that is it.
+A **`StatefulWidget`** is allowed to remember numbers and change them later.
 
-- **`Column`** — puts its children one *above* another (like a tower).
-- **`Row`** — puts its children one *beside* another (like a queue).
-- **`Container`** — a box we can colour, round off and give a size.
+A stateful widget comes in two pieces:
 
-And one habit: when a piece of the screen gets long, **move it into its own
-widget in its own file**. Our pet goes in `pet_view.dart`, our screen goes in
-`home_screen.dart`. `main.dart` stays tiny.
+1. the widget itself (`HomeScreen`) — small and boring, it just says
+   `createState()`;
+2. the **state** class (`_HomeScreenState`) — this is where the numbers live
+   and where the real code goes.
 
-A trick worth saying out loud: a circle is just a `Container` with
-`shape: BoxShape.circle`. Two small circles in a `Row` are eyes. That is the
-whole pet!
+And the magic word is **`setState`**:
+
+```dart
+setState(() {
+  hunger = hunger - 25;
+});
+```
+
+`setState` means: "I changed something — please draw the screen again."
+If you change a number *without* `setState`, the number really does change but
+the screen never notices. That bug catches everyone once!
+
+One more trick: `clamp(0, 100)`. It squeezes a number so it can never be
+smaller than 0 or bigger than 100. Without it, hunger could become -85 and the
+bar would break.
 
 ## Files added or changed
 
-- `lib/widgets/pet_view.dart` — **new.** The pet: body, two eyes, a mouth.
-- `lib/screens/home_screen.dart` — **new.** AppBar, pet, name, three buttons.
-- `lib/main.dart` — now shows `HomeScreen` instead of a bare `Text`.
-- `test/widget_test.dart` — checks the pet, the name and the three labels.
+- `lib/widgets/stat_bar.dart` — **new.** A label, a `LinearProgressIndicator`
+  and the number.
+- `lib/screens/home_screen.dart` — now a `StatefulWidget` with `hunger`,
+  `happiness` and `energy`, and three functions that change them.
+- `test/widget_test.dart` — taps Feed and checks the number went down, and
+  checks stats stop at 0.
 
 ## Build it live (teacher script)
 
-1. Make the folders `lib/widgets/` and `lib/screens/`. Explain why: code is
-   easier to find when it is sorted, exactly like school subjects in folders.
-2. Create `pet_view.dart`. Write the outer `Container` first with
-   `width: 200, height: 200` and an orange colour. Hot reload — an orange
-   square. Students will laugh.
-3. Add `shape: BoxShape.circle` to the decoration. Reload — now it is a face.
-4. Add the `border`. Reload.
-5. Add a `Column` inside with a `Row` of two `_Eye` widgets. Write `_Eye` as
-   its own tiny class so everyone sees "one widget = one job".
-6. Put a `SizedBox(width: 36)` between the eyes and ask students to change the
-   number. 0? 100? This is how we space things out in Flutter.
-7. Add `_Mouth` under the eyes with `borderRadius` and reload.
-8. Create `home_screen.dart`. `Scaffold` → `AppBar` → `body` → `Padding` →
-   `Column`. Drop `PetView()` in, then the name `Text`, then the `Row` of
-   buttons.
-9. Write `_ActionButton` once, use it three times. Point out that this is why
-   making your own widget is worth it — write once, use everywhere.
-10. Change `main.dart` to `home: const HomeScreen()`.
-11. Run `flutter analyze` and `flutter test`.
+1. In `home_screen.dart`, change `extends StatelessWidget` to
+   `extends StatefulWidget`. The editor shows a red line — use the quick fix
+   ("Create missing override") or type the two classes by hand.
+2. Add the three numbers at the top of `_HomeScreenState`:
+   `int hunger = 40; int happiness = 70; int energy = 80;`
+3. Build `stat_bar.dart`. Explain the division: the bar wants `0.0` to `1.0`
+   but humans like `0` to `100`, so `value / 100`.
+4. Put the three `StatBar` widgets in the `Column`. Hot reload — three bars!
+5. Write `feed()` **without** `setState` first. Tap the button: nothing
+   happens. Let students puzzle over it. Then wrap it in `setState` and tap
+   again. This is the moment of the lesson.
+6. Add `play()` and `sleep()`. Decide together what each one should do.
+6b. On a small phone you will now see the black-and-yellow "overflow" stripes:
+   the content got taller than the screen. Swap the `Padding` around the
+   `Column` for a `SingleChildScrollView` and the stripes disappear. Say it
+   plainly: **if it does not fit, let it scroll.**
+7. Tap Feed many times until hunger would go negative — show the broken bar,
+   then add `_clamp` and fix it.
+8. Give `_ActionButton` an `onPressed` parameter and pass `feed`, `play`,
+   `sleep` in. Note we write `feed` with **no brackets** — we are handing over
+   the function, not calling it.
+9. Run `flutter analyze` and `flutter test`.
 
 ## Quick check
 
-1. What is the difference between a `Column` and a `Row`?
-2. How do you turn a square `Container` into a circle?
-3. Our three buttons are all `_ActionButton`. Why is that better than writing
-   the same button code three times?
+1. What is the one big difference between a `StatelessWidget` and a
+   `StatefulWidget`?
+2. What goes wrong if you change a number but forget `setState`?
+3. Why do we pass `feed` and not `feed()` to the button?
 
 ## Homework
 
-**Easy:** give the pet ears. Hint: a small `Container` on each side — try a
-`Row` above the face, or use a `Stack`. Also change the pet's colour and name.
+**Easy:** add a "Bath" button that raises happiness by 10. Then change the
+starting numbers so your pet begins sad and starving.
 
-**Bonus (older students):** add a fourth button called `Bath` with the icon
-`Icons.shower`, and make the buttons wrap neatly on a narrow phone by swapping
-the `Row` for a `Wrap`.
+**Bonus (older students):** make the Hunger bar turn red when hunger is over
+70 and stay green below that. Hint: you can choose a colour with an `if` before
+the `return`, or with `hunger > 70 ? Colors.red : Colors.green`.

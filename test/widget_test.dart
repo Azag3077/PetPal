@@ -1,22 +1,33 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:petpal/main.dart';
-import 'package:petpal/widgets/pet_view.dart';
 
 void main() {
-  testWidgets('home screen shows the pet, its name and three buttons',
+  testWidgets('feeding the pet makes the hunger number go down',
       (tester) async {
     await tester.pumpWidget(const PetPalApp());
 
-    // The pet is drawn on the screen.
-    expect(find.byType(PetView), findsOneWidget);
+    // Hunger starts at 40.
+    expect(find.text('40'), findsOneWidget);
 
-    // Our pet's name is there.
-    expect(find.text('Bolu'), findsOneWidget);
+    // Tap the Feed button (the first filled icon button).
+    await tester.tap(find.byIcon(Icons.restaurant));
+    await tester.pump();
 
-    // And all three button labels.
-    expect(find.text('Feed'), findsOneWidget);
-    expect(find.text('Play'), findsOneWidget);
-    expect(find.text('Sleep'), findsOneWidget);
+    // Feeding takes 25 off hunger, so now it should be 15.
+    expect(find.text('15'), findsOneWidget);
+  });
+
+  testWidgets('stats never go below 0', (tester) async {
+    await tester.pumpWidget(const PetPalApp());
+
+    // Feed five times. 40 - (5 * 25) would be -85 without clamping.
+    for (var i = 0; i < 5; i++) {
+      await tester.tap(find.byIcon(Icons.restaurant));
+      await tester.pump();
+    }
+
+    expect(find.text('0'), findsOneWidget);
   });
 }
