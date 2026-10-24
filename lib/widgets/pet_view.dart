@@ -3,14 +3,13 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../models/pet.dart';
+import 'pet_painter.dart';
 
-/// Draws our pet and makes it move.
+/// Shows the pet and makes it move.
 ///
-/// Two kinds of movement happen here:
-/// * the colours and the mouth *slide* smoothly from one mood to the next
-///   (an "implicit" animation — Flutter does the work);
-/// * the pet bounces when it is happy and shakes when it is fed
-///   (an "explicit" animation — we drive it ourselves).
+/// The pet itself is no longer made of Containers — it is *painted* by
+/// [PetPainter]. This widget's job is to pick the colour, run the
+/// animations, and hand the painter a canvas to draw on.
 class PetView extends StatefulWidget {
   const PetView({super.key, required this.mood, this.shakeCount = 0});
 
@@ -68,7 +67,7 @@ class _PetViewState extends State<PetView> with TickerProviderStateMixin {
   }
 
   /// Controllers hold on to the ticker, so they must be disposed —
-  /// exactly like the timer in the last lesson.
+  /// exactly like the timer in lesson 05.
   @override
   void dispose() {
     _bounce.dispose();
@@ -147,86 +146,26 @@ class _PetViewState extends State<PetView> with TickerProviderStateMixin {
     );
   }
 
-  /// The pet's face. The outer box is an AnimatedContainer, so when the mood
-  /// changes the colour fades instead of snapping.
+  /// The painted pet.
+  ///
+  /// `TweenAnimationBuilder` is the implicit-animation trick from last lesson,
+  /// but for a value we use ourselves instead of a widget's property. It hands
+  /// us a colour part-way between the old one and the new one, so the body
+  /// still fades gently from mood to mood.
   Widget _buildBody() {
-    return AnimatedContainer(
+    return TweenAnimationBuilder<Color?>(
+      tween: ColorTween(end: _bodyColor),
       duration: const Duration(milliseconds: 400),
-      width: 200,
-      height: 200,
-      decoration: BoxDecoration(
-        color: _bodyColor,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.orange.shade700, width: 4),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _Eye(closed: widget.mood == Mood.sleepy),
-              const SizedBox(width: 36),
-              _Eye(closed: widget.mood == Mood.sleepy),
-            ],
+      builder: (context, color, _) {
+        return CustomPaint(
+          // CustomPaint has no size of its own, so we must give it one.
+          size: const Size(200, 200),
+          painter: PetPainter(
+            mood: widget.mood,
+            bodyColor: color ?? _bodyColor,
           ),
-          const SizedBox(height: 24),
-          _Mouth(mood: widget.mood),
-        ],
-      ),
-    );
-  }
-}
-
-/// One single eye. Open it is a black circle; closed it is a thin line.
-/// It is an AnimatedContainer, so the eye closes smoothly like a real blink.
-class _Eye extends StatelessWidget {
-  const _Eye({required this.closed});
-
-  final bool closed;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: 26,
-      height: closed ? 5 : 26,
-      decoration: BoxDecoration(
-        color: Colors.black87,
-        borderRadius: BorderRadius.circular(closed ? 3 : 13),
-      ),
-    );
-  }
-}
-
-/// The mouth. It is wide and happy, small and flat, or turned down and sad —
-/// and it slides between those shapes.
-class _Mouth extends StatelessWidget {
-  const _Mouth({required this.mood});
-
-  final Mood mood;
-
-  @override
-  Widget build(BuildContext context) {
-    // How wide the mouth is for each mood.
-    final double width = switch (mood) {
-      Mood.happy => 80,
-      Mood.okay => 60,
-      Mood.sad => 40,
-      Mood.sleepy => 26,
-    };
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      width: width,
-      height: 18,
-      decoration: BoxDecoration(
-        color: Colors.brown.shade700,
-        // A happy mouth is rounded at the bottom like a smile.
-        borderRadius: mood == Mood.happy
-            ? const BorderRadius.vertical(bottom: Radius.circular(40))
-            : BorderRadius.circular(8),
-      ),
+        );
+      },
     );
   }
 }

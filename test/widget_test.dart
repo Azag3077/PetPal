@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:petpal/main.dart';
 import 'package:petpal/models/pet.dart';
+import 'package:petpal/widgets/pet_painter.dart';
 import 'package:petpal/widgets/pet_view.dart';
 
 /// Tests run on a pretend screen that is only 800x600, which is smaller than
@@ -92,11 +93,11 @@ void main() {
     useTallScreen(tester);
     await tester.pumpWidget(const PetPalApp());
 
-    // The pet's round body is the first AnimatedContainer inside PetView.
+    // The pet is now painted, so we look for the CustomPaint inside PetView.
     final petBody = find
         .descendant(
           of: find.byType(PetView),
-          matching: find.byType(AnimatedContainer),
+          matching: find.byType(CustomPaint),
         )
         .first;
 
@@ -120,5 +121,32 @@ void main() {
     );
 
     expect(find.text('Sad'), findsOneWidget);
+  });
+
+  testWidgets('the pet is painted, not built from boxes', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: PetView(mood: Mood.happy)),
+      ),
+    );
+
+    // Find the CustomPaint that belongs to us and check it holds a PetPainter.
+    final painted = tester.widgetList<CustomPaint>(
+      find.descendant(
+        of: find.byType(PetView),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+
+    expect(painted.any((p) => p.painter is PetPainter), isTrue);
+  });
+
+  test('the painter only redraws when something actually changed', () {
+    final happy = PetPainter(mood: Mood.happy, bodyColor: Colors.orange);
+    final sameAgain = PetPainter(mood: Mood.happy, bodyColor: Colors.orange);
+    final sad = PetPainter(mood: Mood.sad, bodyColor: Colors.grey);
+
+    expect(sameAgain.shouldRepaint(happy), isFalse);
+    expect(sad.shouldRepaint(happy), isTrue);
   });
 }
