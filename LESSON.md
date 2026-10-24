@@ -1,67 +1,65 @@
-# Lesson 00: An Empty App
+# Lesson 01: Drawing Our Pet
 
 ## The new idea
 
-Every Flutter app is really just **one widget inside another widget**, all the
-way down. Today we throw away the demo app Flutter gave us and start with the
-smallest app that still works.
+Flutter apps are built by **putting small widgets inside bigger widgets**. We
+never draw a whole screen in one go — we build little pieces and stack them.
 
-Three words to remember:
+The three pieces we use today:
 
-- **`main()`** — the first function that runs. Every Dart program has one.
-- **`runApp()`** — hands a widget to Flutter and says "put this on screen".
-- **`MaterialApp`** — the wrapper that gives our app colours, fonts and screens.
+- **`Column`** — puts its children one *above* another (like a tower).
+- **`Row`** — puts its children one *beside* another (like a queue).
+- **`Container`** — a box we can colour, round off and give a size.
 
-Think of it like a school play: `main()` is the bell that starts the show,
-`runApp()` opens the curtain, and `MaterialApp` is the stage itself.
+And one habit: when a piece of the screen gets long, **move it into its own
+widget in its own file**. Our pet goes in `pet_view.dart`, our screen goes in
+`home_screen.dart`. `main.dart` stays tiny.
 
-## What is in the project
+A trick worth saying out loud: a circle is just a `Container` with
+`shape: BoxShape.circle`. Two small circles in a `Row` are eyes. That is the
+whole pet!
 
-```
-petpal/
-├── lib/
-│   └── main.dart        <- the only code file for now
-├── test/
-│   └── widget_test.dart <- our first test
-├── pubspec.yaml         <- the app's shopping list (name, version, packages)
-├── LESSON.md            <- this file
-└── README.md            <- the list of all lessons
-```
+## Files added or changed
 
-Files added or changed this lesson:
-
-- `lib/main.dart` — stripped down to a bare `MaterialApp`.
-- `test/widget_test.dart` — replaced the counter test with our own.
-- `README.md`, `LESSON.md` — new.
+- `lib/widgets/pet_view.dart` — **new.** The pet: body, two eyes, a mouth.
+- `lib/screens/home_screen.dart` — **new.** AppBar, pet, name, three buttons.
+- `lib/main.dart` — now shows `HomeScreen` instead of a bare `Text`.
+- `test/widget_test.dart` — checks the pet, the name and the three labels.
 
 ## Build it live (teacher script)
 
-1. Run `flutter create --org com.teaching --project-name petpal petpal` and
-   show the students the demo counter app with `flutter run`.
-2. Open `lib/main.dart`. Say out loud: "we are going to delete almost all of
-   this." Delete everything.
-3. Type the import together: `import 'package:flutter/material.dart';`
-   Explain that this is how we borrow Flutter's ready-made widgets.
-4. Write `void main() { runApp(const PetPalApp()); }`.
-   Save. The app breaks — `PetPalApp` does not exist yet. That is fine!
-5. Write the `PetPalApp` class extending `StatelessWidget` with its `build`
-   method returning a `MaterialApp`.
-6. Inside it put `home: const Scaffold(body: Center(child: Text('PetPal')))`.
-   Save and hot reload. One word, in the middle of the screen. Done.
-7. Run `flutter analyze` and `flutter test` so everyone sees green from day one.
+1. Make the folders `lib/widgets/` and `lib/screens/`. Explain why: code is
+   easier to find when it is sorted, exactly like school subjects in folders.
+2. Create `pet_view.dart`. Write the outer `Container` first with
+   `width: 200, height: 200` and an orange colour. Hot reload — an orange
+   square. Students will laugh.
+3. Add `shape: BoxShape.circle` to the decoration. Reload — now it is a face.
+4. Add the `border`. Reload.
+5. Add a `Column` inside with a `Row` of two `_Eye` widgets. Write `_Eye` as
+   its own tiny class so everyone sees "one widget = one job".
+6. Put a `SizedBox(width: 36)` between the eyes and ask students to change the
+   number. 0? 100? This is how we space things out in Flutter.
+7. Add `_Mouth` under the eyes with `borderRadius` and reload.
+8. Create `home_screen.dart`. `Scaffold` → `AppBar` → `body` → `Padding` →
+   `Column`. Drop `PetView()` in, then the name `Text`, then the `Row` of
+   buttons.
+9. Write `_ActionButton` once, use it three times. Point out that this is why
+   making your own widget is worth it — write once, use everywhere.
+10. Change `main.dart` to `home: const HomeScreen()`.
+11. Run `flutter analyze` and `flutter test`.
 
 ## Quick check
 
-1. Which function runs first when a Flutter app starts?
-2. What does `runApp()` actually do?
-3. Why do we wrap `Text` inside `Center`?
+1. What is the difference between a `Column` and a `Row`?
+2. How do you turn a square `Container` into a circle?
+3. Our three buttons are all `_ActionButton`. Why is that better than writing
+   the same button code three times?
 
 ## Homework
 
-**Easy:** change the word on the screen to your own pet's name, and change
-`colorSchemeSeed: Colors.teal` to your favourite colour. Take a screenshot.
+**Easy:** give the pet ears. Hint: a small `Container` on each side — try a
+`Row` above the face, or use a `Stack`. Also change the pet's colour and name.
 
-**Bonus (older students):** add a second line of text under `PetPal` using a
-`Column`, and give it a bigger font with
-`style: TextStyle(fontSize: 32)`. Why can't a `Center` hold two children on
-its own?
+**Bonus (older students):** add a fourth button called `Bath` with the icon
+`Icons.shower`, and make the buttons wrap neatly on a narrow phone by swapping
+the `Row` for a `Wrap`.

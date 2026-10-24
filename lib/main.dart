@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'screens/home_screen.dart';
+
 /// This is the very first line of code that runs when the app starts.
 /// It tells Flutter: "please put PetPalApp on the screen".
 void main() {
@@ -19,11 +21,7 @@ class PetPalApp extends StatelessWidget {
         colorSchemeSeed: Colors.teal,
         useMaterial3: true,
       ),
-      home: const Scaffold(
-        body: Center(
-          child: Text('PetPal'),
-        ),
-      ),
+      home: const HomeScreen(),
     );
   }
 }
