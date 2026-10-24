@@ -1,127 +1,134 @@
-# Lesson 09: Name Your Pet
+# Lesson 10: Moving Between Screens
 
 ## The new idea
 
-Every pet so far has been called Bolu, because we typed that into the code.
-Today the **player** decides — and that means letting them type.
+Last lesson `main.dart` swapped screens with one `if`. That works for two
+screens, but it has no idea what a **back button** is. Today we hand the job
+over to Flutter's **Navigator**.
 
-### `TextEditingController`
+Think of the Navigator as a **pile of paper**. The screen you can see is the
+sheet on top.
 
-A text field needs somewhere to keep the letters. That somewhere is a
-controller:
-
-```dart
-final _nameController = TextEditingController();
-...
-TextFormField(controller: _nameController)
-...
-final typed = _nameController.text;
-```
-
-And — third time now — **a controller must be disposed**. Timers, animation
-controllers, text controllers: if you created it, you clean it up.
-
-### `Form` and validators
-
-A `Form` is a wrapper that knows about all the fields inside it. We pin a
-`GlobalKey<FormState>` on it as a name tag so we can reach it later:
+### `push` — put a new sheet on the pile
 
 ```dart
-if (_formKey.currentState!.validate()) { ... }
+Navigator.push(
+  context,
+  MaterialPageRoute(builder: (context) => const NameScreen()),
+);
 ```
 
-Each field gets a **validator** — a function that looks at what was typed and
-returns:
+The old screen is still underneath, which is why the back arrow appears all by
+itself. Flutter also slides the new screen in for you.
 
-- an **error message** if something is wrong, or
-- **`null`** if everything is fine.
-
-That `null` trips people up. Remember: *no message means no problem.*
+### `pop` — take the top sheet off
 
 ```dart
-String? _checkName(String? value) {
-  if (name.isEmpty) return 'Your pet needs a name!';
-  if (name.length > 12) return 'That is too long — 12 letters at most.';
-  return null;   // all good
-}
+Navigator.pop(context);
 ```
 
-We also use `.trim()` to throw away stray spaces, so `"  Bolu  "` becomes
-`"Bolu"` and a name of nothing but spaces counts as empty.
+The `AppBar` back arrow does this automatically. We can also do it ourselves
+from a button.
 
-### Handing the answer back
+### `pushReplacement` — swap the top sheet
 
-The name screen does not know what a pet is. It just calls the function it was
-given:
+After the player has named their pet, going "back" to a blank form would be
+silly. So the name screen uses:
 
 ```dart
-widget.onReady(_nameController.text.trim(), _chosenColor);
+Navigator.pushReplacement(context, MaterialPageRoute(...));
 ```
 
-This is the same trick as the Feed button in lesson 02 — **a widget reports
-what happened, and somebody else decides what it means.**
+The form is thrown away as the home screen arrives.
 
-For now `main.dart` holds the answers and swaps screens with a single `if`.
-Next lesson we replace that with Flutter's real `Navigator`.
+### Sending an answer back
 
-### Keys
+This is the best bit. `pop` can carry a message:
 
-Each colour circle gets `key: ValueKey(color)`. A key is a label that tells
-Flutter (and our tests) which circle is which.
+```dart
+// on the stats screen
+Navigator.pop(context, 'treat');
+```
+
+```dart
+// on the home screen
+final answer = await Navigator.push<String>(context, ...);
+if (answer == 'treat') { ... }
+```
+
+`await` means **"pause here until that screen closes"**. The value it gives
+back is whatever the other screen passed to `pop`. Pressing the back arrow
+instead gives `null` — which is how we know the player did *not* want a treat.
+
+### `mounted`
+
+While we were away on the other screen, our screen might have been closed. So
+before using it again we check:
+
+```dart
+if (!mounted) return;
+```
+
+Forget this and Flutter gives you a telling-off in red.
+
+## Our three screens
+
+```
+WelcomeScreen  --push-->  NameScreen  --pushReplacement-->  HomeScreen
+                                                                |
+                                                      push / pop (with a treat)
+                                                                |
+                                                           AboutScreen
+```
 
 ## Files added or changed
 
-- `lib/screens/name_screen.dart` — **new.** The form, the validator and the
-  six colour circles.
-- `lib/main.dart` — new `PetPalRoot` that shows the name screen first, then the
-  home screen.
-- `lib/screens/home_screen.dart` — takes `petName` and `petColor`, and builds
-  its `Pet` in `initState` with `late final`.
-- `lib/widgets/play_area.dart`, `pet_view.dart`, `pet_painter.dart` — pass the
-  chosen colour down; the mood now *tints* that colour with `Color.lerp`.
-- `test/name_screen_test.dart` — **new.** Six tests for the form.
-- `test/widget_test.dart` — a `startWithPet` helper so every home test gets
-  past the name screen first.
+- `lib/screens/welcome_screen.dart` — **new.** Title, a sample pet, Get started.
+- `lib/screens/about_screen.dart` — **new.** The pet's stats, some advice, and
+  two buttons that `pop` with and without a treat.
+- `lib/screens/name_screen.dart` — no more `onReady` callback; it navigates
+  itself with `pushReplacement`.
+- `lib/main.dart` — tiny again: `home: const WelcomeScreen()`.
+- `lib/screens/home_screen.dart` — an info button in the `AppBar`, and
+  `_openAbout()` which awaits the answer. The clock also slowed from 3 seconds
+  to 6, so the pet does not starve while the player reads the stats screen.
+- `test/helpers.dart` — **new.** Shared `useTallScreen`, `finishRouteChange`
+  and `startWithPet` so the test files stay short.
+- `test/navigation_test.dart` — **new.** Four tests for the whole journey.
 
 ## Build it live (teacher script)
 
-1. Create `name_screen.dart`. Start with just a `Scaffold`, a heading and a
-   plain `TextFormField` with a controller. Type into it. Nothing happens yet —
-   that is fine.
-2. Add `dispose()` with `_nameController.dispose()`. Ask the class what else we
-   have had to dispose so far (timers, animation controllers).
-3. Add the `FilledButton` and make `_submit()` just `print` the text. Show the
-   typed name in the console.
-4. Wrap everything in a `Form` with `key: _formKey` and add the `validator`.
-   Press Start empty — the red message appears all by itself. This always gets
-   a reaction.
-5. Try a very long name. Then explain the `null` return: no message means no
-   problem.
-6. Add `.trim()` and test with `"   Bolu   "`.
-7. Add the colour circles with a `for` inside the `Wrap`, and
-   `onTap: () => setState(() => _chosenColor = color)`. Tap them and watch the
-   tick move.
-8. Change `onReady` from a print to a real callback. In `main.dart`, write
-   `PetPalRoot` with `_petName`, `_petColor` and the `if`.
-9. Give `HomeScreen` its two new parameters. Fix the red lines: `Pet` is now
-   built in `initState` with `late final Pet pet;`. Explain `late` as "I
-   promise to fill this in before anyone looks".
-10. Pass the colour down to `PetView` and use `Color.lerp` for the moods.
-    Restart, pick pink, let the pet get sad, and watch the pink go grey.
-11. Run `flutter analyze` and `flutter test`.
+1. Create `welcome_screen.dart` with just the title and the button, and set
+   `home: const WelcomeScreen()` in `main.dart`. Delete `PetPalRoot`.
+2. Make the button call `Navigator.push` to `NameScreen`. Tap it. Notice two
+   things: the screen *slides*, and there is now a back arrow. We wrote neither.
+3. Change `NameScreen` to navigate itself. First use `push` — then press back
+   and show that you land on the form again, with the name still in it. Then
+   change it to `pushReplacement` and show the difference.
+4. Create `about_screen.dart`. Give it the pet and show the `StatBar`s again.
+   Point out we are *reading* the pet, not changing it.
+5. Add the info button to the home `AppBar` and open the stats screen with a
+   plain `Navigator.push`. Works, but nothing comes back.
+6. Now add the treat. `Navigator.pop(context, 'treat')` on one side,
+   `final answer = await Navigator.push<String>(...)` on the other. Tap the
+   treat and watch the hunger bar drop on the screen behind.
+7. Press the back arrow instead and show that `answer` is `null`.
+8. Add `if (!mounted) return;` and explain why.
+9. Run `flutter analyze` and `flutter test`.
 
 ## Quick check
 
-1. What does a validator return when the value is **good**?
-2. Why must we call `_nameController.dispose()`?
-3. The name screen does not know what a `Pet` is. How does the name get to the
-   home screen then?
+1. What is the difference between `push` and `pushReplacement`?
+2. The stats screen says `Navigator.pop(context, 'treat')`. Where does the word
+   `'treat'` end up?
+3. What value comes back if the player taps the back arrow instead of a button?
 
 ## Homework
 
-**Easy:** change the rules so a name must be at least 2 letters long, with your
-own error message. Then add two more colours to `petColors`.
+**Easy:** add a third button on the stats screen that pops with the word
+`'nap'`, and make the home screen call `pet.sleep()` when it sees it.
 
-**Bonus (older students):** add a second field where the player types the pet's
-age in years, and validate that it is a whole number between 0 and 20. Hint:
-`int.tryParse(value)` returns `null` when the text is not a number.
+**Bonus (older students):** replace the `MaterialPageRoute` calls with **named
+routes**. Put `routes: {'/name': ..., '/home': ...}` in the `MaterialApp` and
+navigate with `Navigator.pushNamed(context, '/name')`. What gets easier? What
+gets harder when you need to pass the pet's name along?

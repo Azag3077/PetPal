@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:petpal/main.dart';
 import 'package:petpal/screens/name_screen.dart';
 
+import 'helpers.dart';
+
 void main() {
-  testWidgets('the app opens on the name screen', (tester) async {
-    await tester.pumpWidget(const PetPalApp());
+  testWidgets('Get started opens the name screen', (tester) async {
+    await openNameScreen(tester);
 
     expect(find.text('What will you call your pet?'), findsOneWidget);
     expect(find.text('Start'), findsOneWidget);
   });
 
   testWidgets('an empty name is refused', (tester) async {
-    await tester.pumpWidget(const PetPalApp());
+    await openNameScreen(tester);
 
     // Press Start without typing anything.
     await tester.tap(find.text('Start'));
@@ -26,21 +27,24 @@ void main() {
   });
 
   testWidgets('a name longer than 12 letters is refused', (tester) async {
-    await tester.pumpWidget(const PetPalApp());
+    await openNameScreen(tester);
 
     await tester.enterText(find.byType(TextFormField), 'Supercalifragilistic');
     await tester.tap(find.text('Start'));
     await tester.pump();
 
-    expect(find.text('That is too long — 12 letters at most.'), findsOneWidget);
+    expect(
+      find.text('That is too long — 12 letters at most.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a good name takes us to the home screen', (tester) async {
-    await tester.pumpWidget(const PetPalApp());
+    await openNameScreen(tester);
 
     await tester.enterText(find.byType(TextFormField), 'Zara');
     await tester.tap(find.text('Start'));
-    await tester.pump();
+    await finishRouteChange(tester);
 
     // The name screen is gone...
     expect(find.text('What will you call your pet?'), findsNothing);
@@ -51,17 +55,17 @@ void main() {
   });
 
   testWidgets('spaces around the name are trimmed off', (tester) async {
-    await tester.pumpWidget(const PetPalApp());
+    await openNameScreen(tester);
 
     await tester.enterText(find.byType(TextFormField), '   Bolu   ');
     await tester.tap(find.text('Start'));
-    await tester.pump();
+    await finishRouteChange(tester);
 
     expect(find.text('Bolu'), findsOneWidget);
   });
 
   testWidgets('tapping a colour circle changes the choice', (tester) async {
-    await tester.pumpWidget(const PetPalApp());
+    await openNameScreen(tester);
 
     // Only the chosen colour shows a tick, and the first one starts chosen.
     expect(find.byIcon(Icons.check), findsOneWidget);

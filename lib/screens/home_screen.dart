@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/pet.dart';
 import '../widgets/play_area.dart';
 import '../widgets/stat_bar.dart';
+import 'about_screen.dart';
 
 /// The main screen of the app.
 /// It owns one Pet object and draws whatever that pet's numbers say.
@@ -53,7 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     pet = Pet(name: widget.petName);
-    _clock = Timer.periodic(const Duration(seconds: 3), (timer) {
+    // Six seconds per tick. Slow enough that a player can walk over to the
+    // stats screen and back without the pet starving while they are away.
+    _clock = Timer.periodic(const Duration(seconds: 6), (timer) {
       setState(() => pet.tick());
       _warnIfStarving();
     });
@@ -87,12 +90,46 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Opens the stats screen and waits to hear what the player chose there.
+  ///
+  /// `await` means "pause here until that screen closes". The value that comes
+  /// back is whatever the other screen passed to `Navigator.pop`.
+  Future<void> _openAbout() async {
+    final answer = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AboutScreen(pet: pet, petColor: widget.petColor),
+      ),
+    );
+
+    // While we were away this screen might have been closed, so we check
+    // `mounted` before touching it. Without this check Flutter complains.
+    if (!mounted) return;
+
+    if (answer == 'treat') {
+      setState(() {
+        pet.feed();
+        _shakeCount++;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${pet.name} loved that treat!')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('PetPal'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: _openAbout,
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Stats and about',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

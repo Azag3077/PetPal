@@ -1,31 +1,12 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:petpal/main.dart';
 import 'package:petpal/models/pet.dart';
 import 'package:petpal/widgets/pet_painter.dart';
 import 'package:petpal/widgets/pet_view.dart';
 import 'package:petpal/widgets/play_area.dart';
 
-/// Tests run on a pretend screen that is only 800x600, which is smaller than
-/// a real phone. This makes the pretend screen tall enough that every button
-/// is visible and tappable.
-void useTallScreen(WidgetTester tester) {
-  tester.view.physicalSize = const Size(900, 1600);
-  tester.view.devicePixelRatio = 1.0;
-  addTearDown(tester.view.resetPhysicalSize);
-  addTearDown(tester.view.resetDevicePixelRatio);
-}
-
-/// The app now starts on the "name your pet" screen, so every home-screen
-/// test has to get past it first. This little helper does that: type a name,
-/// press Start, and we are on the home screen.
-Future<void> startWithPet(WidgetTester tester, [String name = 'Bolu']) async {
-  await tester.pumpWidget(const PetPalApp());
-  await tester.enterText(find.byType(TextFormField), name);
-  await tester.tap(find.text('Start'));
-  await tester.pump();
-}
+import 'helpers.dart';
 
 void main() {
   testWidgets('feeding the pet makes the hunger number go down',
@@ -77,7 +58,7 @@ void main() {
     expect(find.text('40'), findsOneWidget);
 
     // In a test we can jump forward in time instead of really waiting.
-    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(seconds: 6));
 
     // One tick adds 5 to hunger.
     expect(find.text('45'), findsOneWidget);
@@ -87,10 +68,10 @@ void main() {
     useTallScreen(tester);
     await startWithPet(tester);
 
-    // Hunger starts at 40 and grows by 5 every 3 seconds.
+    // Hunger starts at 40 and grows by 5 every 6 seconds.
     // After 8 ticks it reaches 80, which counts as starving.
     for (var i = 0; i < 8; i++) {
-      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(seconds: 6));
     }
 
     // Give the message one frame to slide in.

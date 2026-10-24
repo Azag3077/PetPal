@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'home_screen.dart';
+
 /// The colours a player is allowed to choose for their pet.
 /// A top-level `const` list like this is a tidy place to keep choices.
 const List<Color> petColors = [
@@ -11,16 +13,12 @@ const List<Color> petColors = [
   Color(0xFFFFF59D), // yellow
 ];
 
-/// The first screen the player sees: "what will you call your pet?"
+/// The second screen: "what will you call your pet?"
 ///
-/// It collects a name and a colour, checks they make sense, and then hands
-/// them over to whoever asked for them.
+/// It collects a name and a colour, checks they make sense, and then opens
+/// the home screen with them.
 class NameScreen extends StatefulWidget {
-  const NameScreen({super.key, required this.onReady});
-
-  /// Called once the player has typed a good name and pressed Start.
-  /// The screen does not know what happens next — it just reports the answer.
-  final void Function(String name, Color color) onReady;
+  const NameScreen({super.key});
 
   @override
   State<NameScreen> createState() => _NameScreenState();
@@ -65,9 +63,22 @@ class _NameScreenState extends State<NameScreen> {
   void _submit() {
     // `validate()` runs every validator in the Form. It returns true only if
     // they all said null.
-    if (_formKey.currentState!.validate()) {
-      widget.onReady(_nameController.text.trim(), _chosenColor);
+    if (!_formKey.currentState!.validate()) {
+      return;
     }
+
+    // pushReplacement swaps this screen for the home screen instead of
+    // stacking on top of it, so the back button cannot bring the player back
+    // to a form they have already filled in.
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HomeScreen(
+          petName: _nameController.text.trim(),
+          petColor: _chosenColor,
+        ),
+      ),
+    );
   }
 
   @override
