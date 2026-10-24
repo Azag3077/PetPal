@@ -1,106 +1,100 @@
-# Lesson 07: Painting With Code
+# Lesson 08: Drag Your Pet Around
 
 ## The new idea
 
-Our pet is made of boxes. Boxes are great for buttons and cards, but they are a
-clumsy way to draw a face — you cannot make a *curved* smile out of a
-rectangle.
+So far the player can only press buttons. Today they can **touch the pet
+itself** — drag it around a patch of grass, and tap it to make it giggle.
 
-So today we put the boxes away and pick up a **crayon**.
+### `GestureDetector`
 
-A **`CustomPainter`** gives us a blank sheet of paper (the **canvas**) and lets
-us draw shapes wherever we like:
+Wrap anything in a `GestureDetector` and it starts noticing fingers:
 
 ```dart
-canvas.drawCircle(middle, radius, body);
-canvas.drawLine(start, end, closed);
-canvas.drawPath(path, mouth);
+GestureDetector(
+  onTap: widget.onPetTapped,
+  onPanUpdate: (details) => _movePet(details.delta, area),
+  child: PetView(...),
+)
 ```
 
-Three new words:
+- **`onTap`** — a quick touch.
+- **`onPanUpdate`** — fires over and over while a finger slides across the
+  screen.
 
-- **`Canvas`** — the paper. It has a `size` so we know how big the paper is.
-- **`Paint`** — the crayon. It holds a colour, and a `style` that is either
-  `fill` (colour the shape in) or `stroke` (just the outline).
-- **`Path`** — a route for the crayon to follow. `moveTo` lifts the crayon to a
-  starting point, and `quadraticBezierTo` draws a smooth curve.
+The important word is **`details.delta`**. It is *not* where the finger is — it
+is the little **step** the finger just took. So we never set the position, we
+always **add** the step to the position we already had. That is why the pet
+follows the finger instead of jumping to it.
 
-### The smile
+### `Stack` and `Positioned`
 
-This is the nicest part. A curved mouth is one line with a *bend*:
+A `Column` decides where its children go. We do not want that any more — we
+want to say "the pet is exactly 130 pixels from the left and 40 from the top".
+That needs a **`Stack`** (children can overlap and float) and a
+**`Positioned`** (`left:` and `top:`).
+
+`Positioned` **only works inside a `Stack`**. That is a rule worth writing on
+the board.
+
+### `LayoutBuilder` and keeping the pet on the grass
+
+How do we know where the edge of the grass is? **`LayoutBuilder`** tells us how
+much room we were given (`area.maxWidth`, `area.maxHeight`). Then `clamp` keeps
+the pet inside:
 
 ```dart
-Path()
-  ..moveTo(centre - 38, mouthY)
-  ..quadraticBezierTo(centre, mouthY + bend, centre + 38, mouthY);
+(_position.dx + delta.dx).clamp(0, area.maxWidth - _petWidth)
 ```
 
-`bend` is a positive number for a smile (the curve sags downwards in the
-middle), a negative number for a frown, and `0` for a flat, bored mouth. One
-number, every expression.
-
-### `shouldRepaint`
-
-Flutter asks the painter "do I need to draw this again?" If we always said yes,
-the pet would be redrawn 60 times a second for no reason. So we compare:
-
-```dart
-bool shouldRepaint(PetPainter old) =>
-    old.mood != mood || old.bodyColor != bodyColor;
-```
-
-### Keeping the fade
-
-`AnimatedContainer` is gone, so how does the colour still fade between moods?
-`TweenAnimationBuilder` with a `ColorTween`. It hands us a colour part-way
-between the old and the new one on every frame, and we pass that to the
-painter. Same idea as last lesson, but for a value we own rather than a
-widget's property.
+Same `clamp` as the stats in lesson 02 — a tool we already own, used for a
+completely different job.
 
 ## Files added or changed
 
-- `lib/widgets/pet_painter.dart` — **new.** The whole pet, drawn with
-  `drawCircle`, `drawLine` and a curved `Path`.
-- `lib/widgets/pet_view.dart` — the Containers are gone; it now returns a
-  `CustomPaint` wrapped in a `TweenAnimationBuilder`.
-- `test/widget_test.dart` — checks the pet is painted by a `PetPainter`, and
-  tests `shouldRepaint` directly.
+- `lib/widgets/play_area.dart` — **new.** The grass, the `Stack`, the
+  `Positioned` pet, and the drag maths.
+- `lib/models/pet.dart` — new `giggle()` method (a small happiness boost).
+- `lib/screens/home_screen.dart` — shows `PlayArea` instead of `PetView`, and
+  giggles when the pet is tapped.
+- `test/widget_test.dart` — drags the pet, checks it cannot leave the grass,
+  and taps it to check happiness rises.
 
 ## Build it live (teacher script)
 
-1. Create `pet_painter.dart` with an empty `paint` method and a
-   `shouldRepaint` that returns `true` for now.
-2. In `pet_view.dart`, replace `_buildBody()`'s contents with
-   `CustomPaint(size: const Size(200, 200), painter: PetPainter(...))`.
-   Hot reload — the pet vanishes! Blank paper. Perfect teaching moment.
-3. Draw the body: work out `middle` and `radius`, make a `fill` Paint, and call
-   `canvas.drawCircle`. Reload — an orange circle.
-4. Add the `stroke` Paint and draw the same circle again for the outline.
-   Change `strokeWidth` to 20 and back so everyone sees what stroke means.
-5. Draw the eyes with `drawCircle`. Let students change `0.35` and `0.65` and
-   watch the eyes slide apart. Explain why we use fractions of `size` and not
-   fixed numbers: the pet then works at any size.
-6. Add the sleepy branch with `drawLine` and `StrokeCap.round`.
-7. Now the mouth. Draw it first with `bend = 0` (a flat line), then set
-   `bend = 40`. The pet smiles. Then `-30`. The pet frowns. Let them pick the
-   numbers for each mood.
-8. Fix `shouldRepaint` to compare mood and colour.
-9. Add the `TweenAnimationBuilder` to bring the colour fade back.
-10. Run `flutter analyze` and `flutter test`.
+1. Add `giggle()` to `Pet`: `happiness + 5`, `energy - 1`. Small on purpose, so
+   tapping is not a cheat code.
+2. Create `play_area.dart` with just the green `Container` (height 300,
+   rounded, bordered) and `PetView` inside it. Hot reload — the pet is standing
+   on grass.
+3. Swap the plain child for a `Stack` with a `Positioned`. Hard-code
+   `left: 30, top: 24` and show that changing those numbers moves the pet.
+   Delete the `Stack` for a second so students see the error that `Positioned`
+   must live in a `Stack`.
+4. Turn `left`/`top` into a state field: `Offset _position = Offset(30, 24);`
+5. Wrap the pet in a `GestureDetector` with only `onPanUpdate` and write
+   `_movePet` **without** the clamp:
+   `_position = _position + delta;`
+   Drag the pet right off the screen. Everyone will try it. This is the fun
+   part.
+6. Add `LayoutBuilder` and the `clamp`. Now the pet stops at the fence.
+7. Add `onTap: widget.onPetTapped` and wire it up in `home_screen.dart` with
+   `setState(() => pet.giggle())`. Tap the pet and watch the happiness bar.
+8. Ask: why does `PlayArea` not know what a giggle is? (Same reason the buttons
+   do not — the screen owns the pet, the widgets just report touches.)
+9. Run `flutter analyze` and `flutter test`.
 
 ## Quick check
 
-1. What are the three things a `CustomPainter` works with — what do `Canvas`,
-   `Paint` and `Path` each do?
-2. In the mouth code, what does a negative `bend` look like on screen?
-3. Why do we use `size.width * 0.35` for the eye instead of just `70`?
+1. What is the difference between where a finger *is* and `details.delta`?
+2. Which widget must a `Positioned` be inside?
+3. We used `clamp` in lesson 02 for hunger and again today for position. What
+   does `clamp` do in both cases?
 
 ## Homework
 
-**Easy:** give the pet a tummy — a second, smaller, lighter circle near the
-bottom of the body. Then change the mouth `bend` numbers until you like the
-faces.
+**Easy:** make the grass taller (height 400) and start the pet in a different
+corner. Then add `onDoubleTap` so a double tap feeds the pet.
 
-**Bonus (older students):** draw two triangle ears on top of the head using a
-`Path` with `moveTo` and `lineTo`, and make them droop when the pet is sad by
-changing the triangle's points.
+**Bonus (older students):** add `onPanEnd` so that when the player lets go, the
+pet slides gently back to the middle of the grass. Hint: you will need an
+`AnimationController` and a `Tween<Offset>`, or `AnimatedPositioned`.

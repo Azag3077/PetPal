@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/pet.dart';
-import '../widgets/pet_view.dart';
+import '../widgets/play_area.dart';
 import '../widgets/stat_bar.dart';
 
 /// The main screen of the app.
@@ -81,9 +81,12 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            // We hand the pet's mood to PetView so it can draw the right face,
-            // and the shake counter so it knows when to wobble.
-            PetView(mood: pet.mood, shakeCount: _shakeCount),
+            // The pet now lives on a patch of grass it can be dragged around.
+            PlayArea(
+              mood: pet.mood,
+              shakeCount: _shakeCount,
+              onPetTapped: () => setState(() => pet.giggle()),
+            ),
             const SizedBox(height: 16),
             Text(
               pet.name,

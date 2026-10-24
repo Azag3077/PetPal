@@ -5,6 +5,7 @@ import 'package:petpal/main.dart';
 import 'package:petpal/models/pet.dart';
 import 'package:petpal/widgets/pet_painter.dart';
 import 'package:petpal/widgets/pet_view.dart';
+import 'package:petpal/widgets/play_area.dart';
 
 /// Tests run on a pretend screen that is only 800x600, which is smaller than
 /// a real phone. This makes the pretend screen tall enough that every button
@@ -111,6 +112,58 @@ void main() {
     await tester.pump(const Duration(milliseconds: 60));
 
     expect(tester.getCenter(petBody).dx, isNot(startX));
+  });
+
+  testWidgets('the pet can be dragged across the play area', (tester) async {
+    useTallScreen(tester);
+    await tester.pumpWidget(const PetPalApp());
+
+    final startX = tester.getTopLeft(find.byType(PetView)).dx;
+
+    // Slide a finger to the right, starting on the pet.
+    await tester.drag(find.byType(PetView), const Offset(60, 0));
+    await tester.pump();
+
+    // The pet followed the finger. (A real finger always wobbles a little
+    // before a drag counts as a drag, so we check it moved right rather than
+    // checking an exact number of pixels.)
+    expect(tester.getTopLeft(find.byType(PetView)).dx, greaterThan(startX));
+  });
+
+  testWidgets('the pet cannot be dragged off the grass', (tester) async {
+    useTallScreen(tester);
+    await tester.pumpWidget(const PetPalApp());
+
+    // Drag much further left than the play area is wide.
+    await tester.drag(find.byType(PetView), const Offset(-2000, 0));
+    await tester.pump();
+
+    final stoppedAt = tester.getTopLeft(find.byType(PetView)).dx;
+
+    // The pet should never be left of the grass it is standing on.
+    expect(stoppedAt, greaterThanOrEqualTo(
+      tester.getTopLeft(find.byType(PlayArea)).dx,
+    ));
+
+    // Dragging left again changes nothing, because it is already at the edge.
+    await tester.drag(find.byType(PetView), const Offset(-2000, 0));
+    await tester.pump();
+
+    expect(tester.getTopLeft(find.byType(PetView)).dx, stoppedAt);
+  });
+
+  testWidgets('tapping the pet makes it giggle and get happier',
+      (tester) async {
+    useTallScreen(tester);
+    await tester.pumpWidget(const PetPalApp());
+
+    // Happiness starts at 70.
+    expect(find.text('70'), findsOneWidget);
+
+    await tester.tap(find.byType(PetView));
+    await tester.pump();
+
+    expect(find.text('75'), findsOneWidget);
   });
 
   testWidgets('PetView can be drawn on its own for any mood', (tester) async {

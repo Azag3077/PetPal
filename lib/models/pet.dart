@@ -63,6 +63,13 @@ class Pet {
     hunger = clamp(hunger + 10);
   }
 
+  /// A quick tickle. Much smaller than a proper play, but it still cheers
+  /// the pet up — and it costs almost no energy.
+  void giggle() {
+    happiness = clamp(happiness + 5);
+    energy = clamp(energy - 1);
+  }
+
   /// One "tick" of time passing. Living costs the pet a little of everything:
   /// it gets hungrier, slightly less cheerful, and slightly more tired.
   void tick() {
