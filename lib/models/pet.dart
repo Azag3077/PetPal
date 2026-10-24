@@ -80,4 +80,18 @@ class Pet {
 
   /// True when the pet is so hungry that we should warn the player.
   bool get isStarving => hunger >= 80;
+
+  /// Game over. A pet that is starving, miserable **and** exhausted all at
+  /// once has had enough and runs away.
+  ///
+  /// All three have to be bad. One bad number is just a bad afternoon.
+  bool get hasRunAway => hunger >= 100 && happiness <= 0 && energy <= 0;
+
+  /// Puts every number back to how a brand new pet starts.
+  /// Used by the reset button and when a lost pet comes home.
+  void reset() {
+    hunger = 40;
+    happiness = 70;
+    energy = 80;
+  }
 }

@@ -46,6 +46,18 @@ and homework.
 `main` holds the **finished app**, so you can demo the end result first and
 then go back to `00-blank` and build it together.
 
+## What the finished app does
+
+1. **Welcome** — a bouncing pet and a Get started button.
+2. **Name your pet** — type a name (1–12 letters) and pick a colour.
+3. **Home** — your pet on a patch of grass. Feed it, play with it, let it
+   sleep, drag it about, tap it to make it giggle. Time passes on its own, so
+   it gets hungry whether you are watching or not.
+4. **Stats & about** — how your pet is doing, some advice, and a treat you can
+   send back to the home screen.
+5. **Game over** — neglect all three stats at once and your pet runs away. The
+   reset button in the top corner always gives you a fresh start.
+
 ## Running the tests
 
 ```bash

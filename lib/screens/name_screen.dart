@@ -86,7 +86,6 @@ class _NameScreenState extends State<NameScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Welcome to PetPal'),
-        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -141,10 +140,7 @@ class _NameScreenState extends State<NameScreen> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _submit,
-                  child: const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text('Start', style: TextStyle(fontSize: 20)),
-                  ),
+                  child: const Text('Start'),
                 ),
               ),
             ],

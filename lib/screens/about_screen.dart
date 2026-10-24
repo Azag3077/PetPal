@@ -83,10 +83,7 @@ class AboutScreen extends StatelessWidget {
                 // back. The home screen is waiting for it.
                 onPressed: () => Navigator.pop(context, 'treat'),
                 icon: const Icon(Icons.cake),
-                label: const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Text('Give a treat', style: TextStyle(fontSize: 18)),
-                ),
+                label: const Text('Give a treat'),
               ),
             ),
             const SizedBox(height: 12),
@@ -95,10 +92,7 @@ class AboutScreen extends StatelessWidget {
               child: OutlinedButton(
                 // Popping with nothing means "no treat today".
                 onPressed: () => Navigator.pop(context),
-                child: const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Text('Back to my pet', style: TextStyle(fontSize: 18)),
-                ),
+                child: const Text('Back to my pet'),
               ),
             ),
           ],

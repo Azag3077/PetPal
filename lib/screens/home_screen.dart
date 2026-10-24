@@ -41,8 +41,11 @@ class _HomeScreenState extends State<HomeScreen> {
   /// which is why the type has a `?` on the end.
   Timer? _clock;
 
-  /// So we only nag the player once per hungry spell, not every three seconds.
+  /// So we only nag the player once per hungry spell, not every six seconds.
   bool _hasWarned = false;
+
+  /// True once the pet has run away, so we only show that sad news once.
+  bool _hasRunAway = false;
 
   /// Goes up by one every time we feed the pet. PetView watches this number
   /// and shakes the pet whenever it changes.
@@ -54,11 +57,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     pet = Pet(name: widget.petName);
-    // Six seconds per tick. Slow enough that a player can walk over to the
-    // stats screen and back without the pet starving while they are away.
+    _startClock();
+  }
+
+  /// Starts time passing. Six seconds per tick is slow enough that a player
+  /// can read the stats screen without the pet starving while they are away.
+  void _startClock() {
     _clock = Timer.periodic(const Duration(seconds: 6), (timer) {
       setState(() => pet.tick());
       _warnIfStarving();
+      _checkIfPetRanAway();
     });
   }
 
@@ -87,6 +95,84 @@ class _HomeScreenState extends State<HomeScreen> {
     // Once the pet has been fed we are allowed to warn again later.
     if (!pet.isStarving) {
       _hasWarned = false;
+    }
+  }
+
+  /// Game over. If all three stats are at their worst, the pet gives up on us.
+  ///
+  /// We stop the clock first — there is no point making a pet that has already
+  /// left get even hungrier.
+  Future<void> _checkIfPetRanAway() async {
+    if (!pet.hasRunAway || _hasRunAway) return;
+
+    _hasRunAway = true;
+    _clock?.cancel();
+
+    // `barrierDismissible: false` means tapping outside the box does nothing.
+    // The player has to answer.
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.sentiment_very_dissatisfied, size: 48),
+        title: Text('${pet.name} ran away!'),
+        content: Text(
+          '${pet.name} was hungry, sad and tired all at the same time, '
+          'and went looking for someone else to play with.\n\n'
+          'Would you like to try again?',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Start again'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    _restartGame();
+  }
+
+  /// Puts the pet's numbers back to the start and sets the clock going again.
+  void _restartGame() {
+    setState(() {
+      pet.reset();
+      _hasRunAway = false;
+      _hasWarned = false;
+    });
+    _clock?.cancel();
+    _startClock();
+  }
+
+  /// Asks "are you sure?" before starting over, because a reset cannot be
+  /// undone. A dialog that returns true or false is a very common pattern.
+  Future<void> _confirmReset() async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Start again?'),
+        content: Text('${pet.name} will go back to how they began.'),
+        actions: [
+          OutlinedButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No, keep playing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Yes, reset'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (yes == true) {
+      _restartGame();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${pet.name} feels brand new!')),
+      );
     }
   }
 
@@ -121,9 +207,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // The theme already centres every title, so we do not say so here.
         title: const Text('PetPal'),
-        centerTitle: true,
         actions: [
+          IconButton(
+            onPressed: _confirmReset,
+            icon: const Icon(Icons.restart_alt),
+            tooltip: 'Start again',
+          ),
           IconButton(
             onPressed: _openAbout,
             icon: const Icon(Icons.info_outline),

@@ -48,10 +48,8 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  child: const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text('Get started', style: TextStyle(fontSize: 20)),
-                  ),
+                  // No padding or font size here — the theme handles both.
+                  child: const Text('Get started'),
                 ),
               ),
             ],

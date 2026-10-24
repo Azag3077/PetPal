@@ -28,6 +28,14 @@ Future<void> finishRouteChange(WidgetTester tester) async {
   await tester.pump();
 }
 
+/// Waits for a dialog box to fade in or out. Dialogs are much quicker than a
+/// whole screen change — about 150ms — so we only need a short jump.
+Future<void> finishDialog(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.pump();
+}
+
 /// Walks the app from the welcome screen all the way to the home screen,
 /// naming the pet along the way.
 Future<void> startWithPet(WidgetTester tester, [String name = 'Bolu']) async {
